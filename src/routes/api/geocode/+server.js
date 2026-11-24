@@ -25,7 +25,7 @@ export async function GET({ url, fetch }) {
 	try {
 		res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`, {
 			headers: {
-				'User-Agent': `dc-zone6-checker/1.0${GEOCODER_CONTACT ? ` (${GEOCODER_CONTACT})` : ''}`,
+				'User-Agent': `dc-rpp-checker/1.0${GEOCODER_CONTACT ? ` (${GEOCODER_CONTACT})` : ''}`,
 				Referer: url.origin
 			}
 		});

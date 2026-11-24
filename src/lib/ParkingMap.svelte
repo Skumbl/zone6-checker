@@ -4,8 +4,8 @@
 
 	/** @typedef {{ lat: number, lon: number, label: string, blocks: any }} MapResult */
 
-	/** @type {{ boundary: any, result: MapResult | null, onpick: (lat: number, lon: number) => void }} */
-	let { boundary, result, onpick } = $props();
+	/** @type {{ boundary: any, activeZone: number | null, result: MapResult | null, onpick: (lat: number, lon: number) => void }} */
+	let { boundary, activeZone, result, onpick } = $props();
 
 	/** @type {HTMLDivElement} */
 	let el;
@@ -53,11 +53,28 @@
 		if (!ready || !boundary) return;
 		boundaryLayer?.remove();
 		boundaryLayer = L.geoJSON(boundary, {
-			style: { color: '#d94f00', weight: 2, fillOpacity: 0.08 }
+			onEachFeature: (f, layer) => layer.bindTooltip(`Zone ${f.properties.RPP_ZONE}`, { sticky: true })
 		}).addTo(map);
 		if (!result && boundaryLayer.getBounds().isValid()) {
 			map.fitBounds(boundaryLayer.getBounds(), { padding: [10, 10] });
 		}
+	});
+
+	// Outline every zone; highlight the one the checked address falls in.
+	$effect(() => {
+		// Reading `boundary` re-runs this after the layer above is rebuilt.
+		if (!ready || !boundary || !boundaryLayer) return;
+		const active = activeZone;
+		boundaryLayer.eachLayer((layer) => {
+			const path = /** @type {import('leaflet').Path & { feature?: any }} */ (layer);
+			const on = Number(path.feature?.properties.RPP_ZONE) === active;
+			path.setStyle(
+				on
+					? { color: '#d94f00', weight: 3, opacity: 1, fillOpacity: 0.12 }
+					: { color: '#777', weight: 1, opacity: 0.7, fillOpacity: 0.03 }
+			);
+			if (on) path.bringToFront();
+		});
 	});
 
 	$effect(() => {

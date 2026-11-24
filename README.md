@@ -1,25 +1,24 @@
-# DC Zone 6 Parking Checker
+# DC Parking Zone Checker
 
-A small web app that answers one question: **can you get a Zone 6 residential parking permit at this address?**
+A small web app that answers one question: **which residential parking zone is this DC address in, and can you get a permit there?**
 
-Type in a DC address and it tells you which parking zone the address is in, whether that zone is 6, and whether the street the address is on actually takes part in the permit program. It also shows everything on a map.
+Type in a DC address and it tells you which Residential Permit Parking (RPP) zone the address is in (1 through 8), and whether the street the address is on actually takes part in the permit program. It also shows everything on a map.
 
 ## Why this exists
 
-DC's Residential Permit Parking (RPP) program limits parking on residential streets to two hours unless you have a permit sticker for that zone. The zones mostly follow the city's eight wards, so Zone 6 is roughly Ward 6: Capitol Hill, Navy Yard, Southwest, H Street, NoMa and the surrounding neighborhoods.
+DC's Residential Permit Parking program limits parking on residential streets to two hours unless you have a permit sticker for that zone. The zones mostly follow the city's eight wards, so Zone 6 is roughly Ward 6, Zone 1 is roughly Ward 1, and so on, but the lines don't match exactly.
 
-The catch is that living inside the Zone 6 lines isn't enough. Your specific block has to be enrolled in the program, and plenty of blocks aren't. DDOT publishes all of this, but it's split across GIS layers that aren't much fun to dig through. This app puts both checks behind a single search box.
+The catch is that living inside a zone's lines isn't enough. Your specific block has to be enrolled in the program, and plenty of blocks aren't. DDOT publishes all of this, but it's split across GIS layers that aren't much fun to dig through. This app puts both checks behind a single search box.
 
 ## What you'll see
 
-After you search, you get one of four answers:
+After you search, you get one of three answers:
 
-- **Yes:** the address is in Zone 6 and on (or right next to) an RPP block.
-- **In Zone 6, but no RPP block nearby:** inside the boundary, but the street doesn't seem to be enrolled.
-- **No, this is Zone N:** it's in a different zone.
+- **Zone N, on an RPP block:** the address is in Zone N and on (or right next to) an RPP block, so residents can generally get a Zone N permit.
+- **Zone N, but no RPP block nearby:** inside the Zone N boundary, but the street doesn't seem to be enrolled.
 - **Not in any zone:** the address probably isn't in DC.
 
-The map shows the Zone 6 outline in orange, your address as a dot, and any nearby RPP blocks in blue, along with their address ranges and which side of the street is permitted. If the address search drops the pin in the wrong spot, you can click anywhere on the map to check that point instead.
+The map outlines every zone in gray (hover one to see its number) and highlights the address's zone in orange. Your address shows as a dot, and any nearby RPP blocks show in blue, along with their address ranges and which side of the street is permitted. If the address search drops the pin in the wrong spot, you can click anywhere on the map to check that point instead.
 
 ## Where the data comes from
 
@@ -27,7 +26,7 @@ None of the parking data is stored in this app. Every search asks DC's own GIS s
 
 Addresses are turned into map coordinates with OpenStreetMap's free Nominatim service. That happens on the server, through a small Netlify Function, rather than in your browser. The map tiles come from Esri, with OpenStreetMap as a fallback. Nothing in the app needs an API key.
 
-If you want a saved copy of the Zone 6 data, for history or to compare changes over time, `npm run snapshot` downloads it into the `data/` folder as GeoJSON.
+If you want a saved copy of the data, for history or to compare changes over time, `npm run snapshot` downloads every zone and RPP block into the `data/` folder as GeoJSON. Pass a zone number (`npm run snapshot -- 6`) to save just one zone.
 
 ## A word of caution
 

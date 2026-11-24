@@ -1,8 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import ParkingMap from '#lib/ParkingMap.svelte';
-	import { ZONE, BLOCK_SEARCH_METERS } from '#lib/config.js';
-	import { loadZoneBoundary, checkPoint, geocode, blockRow } from '#lib/gis.js';
+	import { BLOCK_SEARCH_METERS } from '#lib/config.js';
+	import { loadZoneBoundaries, checkPoint, geocode, blockRow } from '#lib/gis.js';
 
 	let query = $state('');
 	/** @type {'idle' | 'loading' | 'choose' | 'done' | 'error'} */
@@ -19,9 +19,10 @@
 	let mapResult = $derived(
 		result ? { lat: result.lat, lon: result.lon, label: result.label, blocks: result.blocks } : null
 	);
+	let activeZone = $derived(result?.zone ? Number(result.zone.RPP_ZONE) : null);
 
 	onMount(() => {
-		loadZoneBoundary()
+		loadZoneBoundaries()
 			.then((gj) => (boundary = gj))
 			.catch((e) => (boundaryError = e.message));
 	});
@@ -84,8 +85,8 @@
 </script>
 
 <header>
-	<h1>Is this address in DC parking Zone {ZONE}?</h1>
-	<p>Checks the address against DDOT's Residential Permit Parking zones and RPP blocks.</p>
+	<h1>Which DC parking zone is this address in?</h1>
+	<p>Finds the Residential Permit Parking (RPP) zone for any DC address, and whether its block is in the permit program.</p>
 </header>
 
 <form {onsubmit}>
@@ -139,7 +140,7 @@
 		{/if}
 	</section>
 
-	<ParkingMap {boundary} result={mapResult} {onpick} />
+	<ParkingMap {boundary} {activeZone} result={mapResult} {onpick} />
 </main>
 
 <footer>

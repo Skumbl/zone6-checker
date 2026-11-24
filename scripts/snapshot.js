@@ -1,11 +1,19 @@
-// Saves a copy of DC's Zone 6 parking data into ./data as GeoJSON.
+// Saves a copy of DC's RPP parking data into ./data as GeoJSON.
 // The app itself always queries DC live; this is for keeping a record in git,
 // diffing changes over time, or working offline.
 //
-//   npm run snapshot
+//   npm run snapshot        # every zone and every RPP block in DC
+//   npm run snapshot -- 6   # just Zone 6 (blocks filtered by ward 6)
 //
 import { mkdir, writeFile } from 'node:fs/promises';
-import { ZONE, GIS, ZONES_LAYER, BLOCKS_LAYER } from '../src/lib/config.js';
+import { GIS, ZONES_LAYER, BLOCKS_LAYER } from '../src/lib/config.js';
+
+const arg = process.argv[2];
+const ZONE = arg ? Number(arg) : null;
+if (arg && !(Number.isInteger(ZONE) && ZONE >= 1 && ZONE <= 8)) {
+	console.error(`Zone must be a number from 1 to 8, got "${arg}"`);
+	process.exit(1);
+}
 
 const OUT = new URL('../data/', import.meta.url);
 
@@ -42,25 +50,33 @@ async function fetchAll(layer, where) {
 /**
  * WARD_ID is a string on some DC layers and a number on others; try both.
  * @param {number} layer
+ * @param {number} ward
  */
-async function fetchBlocksForWard(layer) {
+async function fetchBlocksForWard(layer, ward) {
 	try {
-		return await fetchAll(layer, `WARD_ID = '${ZONE}'`);
+		return await fetchAll(layer, `WARD_ID = '${ward}'`);
 	} catch {
-		return await fetchAll(layer, `WARD_ID = ${ZONE}`);
+		return await fetchAll(layer, `WARD_ID = ${ward}`);
 	}
 }
 
 await mkdir(OUT, { recursive: true });
 
-const zone = await fetchAll(ZONES_LAYER, `RPP_ZONE = ${ZONE}`);
-await writeFile(new URL(`zone${ZONE}-boundary.geojson`, OUT), JSON.stringify(zone, null, 1));
-console.log(`zone${ZONE}-boundary.geojson: ${zone.features.length} polygons`);
+const prefix = ZONE ? `zone${ZONE}` : 'all-zones';
 
-const blocks = await fetchBlocksForWard(BLOCKS_LAYER);
-await writeFile(new URL(`zone${ZONE}-rpp-blocks.geojson`, OUT), JSON.stringify(blocks, null, 1));
-console.log(`zone${ZONE}-rpp-blocks.geojson: ${blocks.features.length} blocks`);
+const zones = await fetchAll(ZONES_LAYER, ZONE ? `RPP_ZONE = ${ZONE}` : '1=1');
+await writeFile(new URL(`${prefix}-boundary.geojson`, OUT), JSON.stringify(zones, null, 1));
+console.log(`${prefix}-boundary.geojson: ${zones.features.length} polygons`);
 
-const meta = { source: GIS, layers: { zones: ZONES_LAYER, blocks: BLOCKS_LAYER }, fetched: new Date().toISOString() };
+const blocks = ZONE ? await fetchBlocksForWard(BLOCKS_LAYER, ZONE) : await fetchAll(BLOCKS_LAYER, '1=1');
+await writeFile(new URL(`${prefix}-rpp-blocks.geojson`, OUT), JSON.stringify(blocks, null, 1));
+console.log(`${prefix}-rpp-blocks.geojson: ${blocks.features.length} blocks`);
+
+const meta = {
+	source: GIS,
+	layers: { zones: ZONES_LAYER, blocks: BLOCKS_LAYER },
+	zone: ZONE ?? 'all',
+	fetched: new Date().toISOString()
+};
 await writeFile(new URL('snapshot.json', OUT), JSON.stringify(meta, null, 2) + '\n');
 console.log('Done.');

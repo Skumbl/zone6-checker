@@ -1,4 +1,4 @@
-import { ZONE, GIS, ZONES_LAYER, BLOCKS_LAYER, BLOCK_SEARCH_METERS, BLOCK_FIELDS } from './config.js';
+import { GIS, ZONES_LAYER, BLOCKS_LAYER, BLOCK_SEARCH_METERS, BLOCK_FIELDS, ZONE_OUTLINE_OFFSET } from './config.js';
 
 /**
  * @param {string} url
@@ -22,9 +22,13 @@ export function gisQuery(layer, params) {
 	return getJson(`${GIS}/${layer}/query?${qs}`);
 }
 
-/** The Zone polygons, for drawing the boundary. */
-export function loadZoneBoundary() {
-	return gisQuery(ZONES_LAYER, { where: `RPP_ZONE=${ZONE}`, outFields: 'NAME,RPP_ZONE,ANC_ID' });
+/** Every RPP zone polygon (simplified), for drawing the zone outlines. */
+export function loadZoneBoundaries() {
+	return gisQuery(ZONES_LAYER, {
+		where: '1=1',
+		outFields: 'NAME,RPP_ZONE',
+		maxAllowableOffset: String(ZONE_OUTLINE_OFFSET)
+	});
 }
 
 /**
@@ -59,22 +63,19 @@ export async function checkPoint(lat, lon) {
  * @returns {{ kind: 'yes' | 'maybe' | 'no', head: string, body: string }}
  */
 export function verdictFor(zoneNum, blockCount) {
-	if (zoneNum === ZONE && blockCount > 0) {
+	if (zoneNum && blockCount > 0) {
 		return {
 			kind: 'yes',
-			head: `Yes, Zone ${ZONE}, on an RPP block`,
-			body: `The address is inside Zone ${ZONE} and sits on or next to a block in the RPP program (shown in blue).`
-		};
-	}
-	if (zoneNum === ZONE) {
-		return {
-			kind: 'maybe',
-			head: `In Zone ${ZONE}, but no RPP block nearby`,
-			body: `The address is inside the Zone ${ZONE} boundary, but its block does not appear to be in the RPP program. Residents can generally only get a permit if their own block is RPP-designated.`
+			head: `Zone ${zoneNum}, on an RPP block`,
+			body: `The address is in RPP Zone ${zoneNum} and sits on or next to a block in the permit program (shown in blue). Residents of RPP blocks can generally get a Zone ${zoneNum} permit.`
 		};
 	}
 	if (zoneNum) {
-		return { kind: 'no', head: `No, this is Zone ${zoneNum}`, body: `The address falls in RPP Zone ${zoneNum}, not Zone ${ZONE}.` };
+		return {
+			kind: 'maybe',
+			head: `Zone ${zoneNum}, but no RPP block nearby`,
+			body: `The address is inside the Zone ${zoneNum} boundary, but its block does not appear to be in the RPP program. Residents can generally only get a permit if their own block is RPP-designated.`
+		};
 	}
 	return {
 		kind: 'no',

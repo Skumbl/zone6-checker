@@ -1,7 +1,7 @@
 {
-  "name": "zone6-checker",
+  "name": "dc-rpp-checker",
   "version": "1.0.0",
-  "description": "Check whether a DC address is in Residential Permit Parking Zone 6",
+  "description": "Find the DC Residential Permit Parking zone for any address and whether its block is RPP",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
